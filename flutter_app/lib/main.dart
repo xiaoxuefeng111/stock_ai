@@ -33,8 +33,8 @@ class _WebViewScreenState extends State<WebViewScreen> {
   late final WebViewController controller;
   bool isLoading = true;
 
-  // ⚠️ 替换为你部署后的实际 URL
-  final String streamlitUrl = 'https://your-app.streamlit.app';
+  // Streamlit Cloud 部署地址
+  final String streamlitUrl = 'https://stockai-wmrqq3qk9g3nxyykgfam73.streamlit.app/';
 
   @override
   void initState() {
