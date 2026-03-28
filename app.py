@@ -1,8 +1,7 @@
 import streamlit as st
 import pandas as pd
 import akshare as ak
-import dashscope
-from dashscope import Generation
+from openai import OpenAI
 import json
 import matplotlib.pyplot as plt
 from datetime import datetime
@@ -28,12 +27,13 @@ st.set_page_config(
 @st.cache_resource
 def init_api():
     api_key = os.getenv("DASHSCOPE_API_KEY", "")
+    base_url = os.getenv("DASHSCOPE_BASE_URL", "https://coding.dashscope.aliyuncs.com/v1")
+    model = os.getenv("DASHSCOPE_MODEL", "glm-5")
     if not api_key:
-        return None
-    dashscope.api_key = api_key
-    return True
+        return None, base_url, model
+    return api_key, base_url, model
 
-api_ready = init_api()
+api_key, api_base_url, api_model = init_api()
 
 # ==================== 数据函数 ====================
 
@@ -97,6 +97,21 @@ def get_news(symbol, limit=5):
     except Exception as e:
         return [], f"获取新闻失败: {str(e)}"
 
+@st.cache_data(ttl=60)
+def search_stock(keyword):
+    """搜索股票"""
+    try:
+        df = ak.stock_zh_a_spot_em()
+        # 按代码或名称搜索
+        mask = df['代码'].str.contains(keyword, case=False, na=False) | \
+               df['名称'].str.contains(keyword, case=False, na=False)
+        results = df[mask][['代码', '名称']].head(10)
+        if results.empty:
+            return [], f"未找到匹配 '{keyword}' 的股票"
+        return results.to_dict('records'), None
+    except Exception as e:
+        return [], f"搜索失败: {str(e)}"
+
 # ==================== 图表 ====================
 
 def plot_chart(df, name, symbol):
@@ -133,24 +148,24 @@ def plot_chart(df, name, symbol):
     plt.tight_layout()
     return fig
 
-# ==================== AI 分析（阿里百炼）====================
+# ==================== AI 分析（阿里百炼 OpenAI兼容模式）====================
 
 def ai_analyze(context, question):
-    if not api_ready:
+    if not api_key:
         return "⚠️ 请在 Streamlit Cloud 的 Secrets 中配置 DASHSCOPE_API_KEY"
     try:
-        response = Generation.call(
-            model='qwen-plus',
+        client = OpenAI(
+            api_key=api_key,
+            base_url=api_base_url
+        )
+        response = client.chat.completions.create(
+            model=api_model,
             messages=[
                 {'role': 'system', 'content': '你是专业股票分析师，客观分析数据，不提供投资建议。'},
                 {'role': 'user', 'content': f"数据:{context}\n问题:{question}"}
-            ],
-            result_format='message'
+            ]
         )
-        if response.status_code == 200:
-            return response.output.choices[0]['message']['content']
-        else:
-            return f"AI分析失败: {response.code} - {response.message}"
+        return response.choices[0].message.content
     except Exception as e:
         return f"AI分析出错: {str(e)}"
 
@@ -170,21 +185,33 @@ st.markdown("""
 st.title("📊 股票分析")
 
 # 显示 API 状态
-if not api_ready:
+if not api_key:
     st.warning("⚠️ AI分析未启用，请配置 DASHSCOPE_API_KEY")
 
 # 热门股票
 hot_stocks = {"茅台": "600519", "平安银行": "000001", "五粮液": "000858",
               "宁德时代": "300750", "比亚迪": "002594"}
 
-# 选择股票
-col1, col2 = st.columns([3, 1])
-with col1:
-    selected = st.selectbox("选择股票", list(hot_stocks.keys()))
-with col2:
-    custom = st.text_input("或输入代码", "")
+# 搜索或选择股票
+search_text = st.text_input("🔍 搜索股票（输入代码或名称）", "")
 
-symbol = custom.strip() if custom.strip() else hot_stocks[selected]
+if search_text.strip():
+    results, search_error = search_stock(search_text.strip())
+    if search_error:
+        st.warning(search_error)
+    elif results:
+        options = [f"{r['代码']} - {r['名称']}" for r in results]
+        selected_search = st.selectbox("选择搜索结果", options)
+        symbol = selected_search.split(" - ")[0]
+    else:
+        symbol = ""
+else:
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        selected = st.selectbox("选择股票", list(hot_stocks.keys()))
+    with col2:
+        custom = st.text_input("或输入代码", "")
+    symbol = custom.strip() if custom.strip() else hot_stocks[selected]
 
 if st.button("🔍 分析", type="primary", use_container_width=True):
     errors = []
@@ -248,7 +275,7 @@ if st.button("🔍 分析", type="primary", use_container_width=True):
         st.markdown("---")
 
         # 4. AI 分析
-        if api_ready and df is not None:
+        if api_key and df is not None:
             st.subheader("🤖 AI分析")
             with st.spinner("分析中..."):
                 ctx = {
@@ -259,7 +286,7 @@ if st.button("🔍 分析", type="primary", use_container_width=True):
                 }
                 result = ai_analyze(json.dumps(ctx), f"分析{quote['name']}技术面和走势")
                 st.markdown(result)
-        elif not api_ready:
+        elif not api_key:
             st.info("💡 AI分析需要配置阿里百炼 API Key")
 
         # 显示错误汇总
