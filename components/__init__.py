@@ -1,0 +1,1 @@
+# Components package - Reusable UI components (stock cards, charts, panels)

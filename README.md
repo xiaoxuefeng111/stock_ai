@@ -13,11 +13,10 @@
 
 | 功能 | 说明 |
 |------|------|
-| 📈 实时行情 | A股实时价格、涨跌幅、成交额，支持北证50等5大指数 |
-| ⭐ 自选股管理 | 自选股列表、涨跌背景色、压力支撑位、均线数据 |
+| 📈 实时行情 | A股实时价格、涨跌幅、成交量 |
 | 📊 技术分析 | K线图、均线(MA5/10/20)、MACD、RSI |
-| 🔥 热点资讯 | 财联社电报、东方财富快讯、同花顺快讯实时聚合 |
-| 🤖 AI分析 | 阿里百炼(通义千问)智能分析，多维度评估 |
+| 📰 热点资讯 | 财联社/东方财富/新浪/同花顺快讯 (crawl4ai爬虫) |
+| 🤖 AI分析 | 阿里百炼(通义千问)智能分析 |
 | 📱 移动端 | 支持手机浏览器 + Flutter App |
 
 ---
@@ -56,26 +55,6 @@ stock_streamlit/
 ├── README.md                # 项目说明
 ├── .streamlit/
 │   └── config.toml          # Streamlit 配置
-├── components/              # UI 组件
-│   ├── market_index.py      # 大盘指数组件
-│   ├── sentiment_panel.py   # 市场情绪面板
-│   ├── stock_card.py        # 自选股卡片
-│   └── news_timeline.py     # 新闻时间线
-├── pages/                   # Tab 页面
-│   ├── tab_watchlist.py     # 自选股页
-│   ├── tab_analysis.py      # 个股分析页
-│   ├── tab_indicators.py    # 技术指标页
-│   ├── tab_ai.py            # AI分析页
-│   └── tab_news.py          # 热点资讯页
-├── services/                # 服务层
-│   ├── data_service.py      # 数据服务
-│   ├── ai_service.py        # AI服务
-│   ├── sentiment_service.py # 情绪计算
-│   └── news_crawler_service.py # 新闻爬虫
-├── utils/                   # 工具函数
-│   ├── helpers.py           # 辅助函数
-│   ├── indicators.py        # 指标计算
-│   └── theme.py             # 主题管理
 └── flutter_app/             # Flutter 手机 App
     ├── lib/
     │   └── main.dart        # Flutter 主程序
@@ -103,16 +82,24 @@ cd stock_ai
 # 2. 安装依赖
 pip install -r requirements.txt
 
-# 3. 配置 API Key
+# 3. 可选：安装 AI 爬虫支持（获取更丰富的新闻源）
+pip install crawl4ai
+
+# 4. 配置 API Key
 # 创建 .env 文件，填入：
 # DASHSCOPE_API_KEY=你的阿里百炼密钥
 
-# 4. 运行
+# 5. 运行
 streamlit run app.py
 
-# 5. 局域网访问（手机可用）
+# 6. 局域网访问（手机可用）
 streamlit run app.py --server.address 0.0.0.0
 ```
+
+> **💡 新闻源说明**：
+> - 默认使用 AkShare API 获取新闻数据
+> - 安装 `crawl4ai` 后可启用 AI 爬虫模式，获取财联社、新浪财经等实时快讯
+> - 两种模式自动切换，无需额外配置
 
 ---
 
@@ -251,7 +238,7 @@ pandas>=2.0.0          # 数据处理
 matplotlib>=3.7.0      # 图表绑制
 openai>=1.0.0          # AI SDK
 python-dotenv>=1.0.0   # 环境变量
-crawl4ai>=0.3.0        # AI爬虫（可选，用于实时新闻）
+crawl4ai>=0.3.0        # AI爬虫（可选，用于新闻抓取）
 ```
 
 ---
@@ -274,16 +261,12 @@ AkShare 获取数据有时较慢，属于正常现象。
 
 确保手机和电脑在同一局域网，使用 `--server.address 0.0.0.0` 启动。
 
-### Q: 新闻数据不是最新的？
-
-安装 crawl4ai 可获取实时新闻：`pip install crawl4ai`
-
 ---
 
 ## 扩展功能（待实现）
 
 - [ ] 多股对比分析
-- [x] 自选股管理
+- [ ] 自选股管理
 - [ ] 价格预警推送
 - [ ] 历史回测功能
 - [ ] 财报深度分析
@@ -306,11 +289,9 @@ AkShare 获取数据有时较慢，属于正常现象。
 ### v1.1.0 (2026-03-28)
 
 - 新增「热点资讯」Tab页
-- 集成财联社电报、东方财富快讯、同花顺快讯
-- 添加北证50指数到大盘显示
-- 自选股卡片优化：成交额显示、涨跌背景色
-- 市场情绪面板：跌停数统计、恐惧贪婪颜色渐变
-- 支持 crawl4ai AI爬虫获取实时新闻
+- 集成 crawl4ai AI爬虫支持
+- 新闻源：财联社、东方财富、新浪财经、同花顺
+- 自动切换爬虫/API模式
 
 ### v1.0.0 (2026-03-28)
 

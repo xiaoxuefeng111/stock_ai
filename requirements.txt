@@ -4,3 +4,6 @@ pandas>=2.0.0
 matplotlib>=3.7.0
 openai>=1.0.0
 python-dotenv>=1.0.0
+
+# Optional: AI爬虫支持 (安装后可获取更丰富的新闻源)
+crawl4ai>=0.3.0  # pip install crawl4ai
