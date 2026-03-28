@@ -1,7 +1,5 @@
 import streamlit as st
 import pandas as pd
-import akshare as ak
-from openai import OpenAI
 import json
 import matplotlib.pyplot as plt
 from datetime import datetime
@@ -10,6 +8,21 @@ from dotenv import load_dotenv
 import traceback
 
 load_dotenv()
+
+# AkShare 数据源（海外服务器可能无法访问）
+try:
+    import akshare as ak
+    AKSHARE_READY = True
+except Exception as e:
+    AKSHARE_READY = False
+    AKSHARE_ERROR = str(e)
+
+# OpenAI API
+try:
+    from openai import OpenAI
+    OPENAI_READY = True
+except Exception as e:
+    OPENAI_READY = False
 
 # 中文支持
 plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']
@@ -37,9 +50,18 @@ api_key, api_base_url, api_model = init_api()
 
 # ==================== 数据函数 ====================
 
+def check_akshare():
+    """检查 AkShare 是否可用"""
+    if not AKSHARE_READY:
+        return False, f"⚠️ 数据源加载失败: {AKSHARE_ERROR}\n\n💡 海外服务器无法访问中国股票数据源，请本地运行。"
+    return True, None
+
 @st.cache_data(ttl=60)
 def get_quote(symbol):
     """获取实时行情"""
+    ready, error = check_akshare()
+    if not ready:
+        return None, error
     try:
         df = ak.stock_zh_a_spot_em()
         stock = df[df['代码'] == symbol]
@@ -65,6 +87,9 @@ def get_quote(symbol):
 @st.cache_data(ttl=300)
 def get_history(symbol, days=60):
     """获取历史数据"""
+    ready, error = check_akshare()
+    if not ready:
+        return None, error
     try:
         df = ak.stock_zh_a_hist(symbol=symbol, period="daily", adjust="qfq")
         if df is None or df.empty:
@@ -88,6 +113,9 @@ def get_history(symbol, days=60):
 @st.cache_data(ttl=600)
 def get_news(symbol, limit=5):
     """获取新闻"""
+    ready, error = check_akshare()
+    if not ready:
+        return [], error
     try:
         df = ak.stock_news_em(symbol=symbol)
         if df is None or df.empty:
@@ -100,6 +128,9 @@ def get_news(symbol, limit=5):
 @st.cache_data(ttl=60)
 def search_stock(keyword):
     """搜索股票"""
+    ready, error = check_akshare()
+    if not ready:
+        return [], error
     try:
         df = ak.stock_zh_a_spot_em()
         # 按代码或名称搜索
@@ -184,6 +215,11 @@ st.markdown("""
 
 st.title("📊 股票分析")
 
+# 显示数据源状态
+if not AKSHARE_READY:
+    st.error(f"❌ 数据源不可用：{AKSHARE_ERROR}")
+    st.info("💡 **海外服务器无法访问中国股票数据源**\n\n请在本地运行：`streamlit run app.py`")
+
 # 显示 API 状态
 if not api_key:
     st.warning("⚠️ AI分析未启用，请配置 DASHSCOPE_API_KEY")
@@ -195,23 +231,30 @@ hot_stocks = {"茅台": "600519", "平安银行": "000001", "五粮液": "000858
 # 搜索或选择股票
 search_text = st.text_input("🔍 搜索股票（输入代码或名称）", "")
 
+# 初始化 symbol
+symbol = ""
+
 if search_text.strip():
     results, search_error = search_stock(search_text.strip())
     if search_error:
-        st.warning(search_error)
+        st.warning(f"⚠️ {search_error}")
+        st.info("💡 搜索功能需要访问国内数据源，海外服务器可能无法使用。\n\n请直接输入股票代码（如 600519）或使用下方热门股票。")
     elif results:
         options = [f"{r['代码']} - {r['名称']}" for r in results]
         selected_search = st.selectbox("选择搜索结果", options)
         symbol = selected_search.split(" - ")[0]
-    else:
-        symbol = ""
 else:
     col1, col2 = st.columns([3, 1])
     with col1:
-        selected = st.selectbox("选择股票", list(hot_stocks.keys()))
+        selected = st.selectbox("选择热门股票", list(hot_stocks.keys()))
     with col2:
         custom = st.text_input("或输入代码", "")
     symbol = custom.strip() if custom.strip() else hot_stocks[selected]
+
+# 验证股票代码
+if not symbol:
+    st.info("👆 请先选择或输入股票代码")
+    st.stop()
 
 if st.button("🔍 分析", type="primary", use_container_width=True):
     errors = []
