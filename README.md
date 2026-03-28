@@ -13,10 +13,11 @@
 
 | 功能 | 说明 |
 |------|------|
-| 📈 实时行情 | A股实时价格、涨跌幅、成交量 |
+| 📈 实时行情 | A股实时价格、涨跌幅、成交额，支持北证50等5大指数 |
+| ⭐ 自选股管理 | 自选股列表、涨跌背景色、压力支撑位、均线数据 |
 | 📊 技术分析 | K线图、均线(MA5/10/20)、MACD、RSI |
-| 📰 新闻资讯 | 个股相关新闻自动抓取 |
-| 🤖 AI分析 | 阿里百炼(通义千问)智能分析 |
+| 🔥 热点资讯 | 财联社电报、东方财富快讯、同花顺快讯实时聚合 |
+| 🤖 AI分析 | 阿里百炼(通义千问)智能分析，多维度评估 |
 | 📱 移动端 | 支持手机浏览器 + Flutter App |
 
 ---
@@ -55,6 +56,26 @@ stock_streamlit/
 ├── README.md                # 项目说明
 ├── .streamlit/
 │   └── config.toml          # Streamlit 配置
+├── components/              # UI 组件
+│   ├── market_index.py      # 大盘指数组件
+│   ├── sentiment_panel.py   # 市场情绪面板
+│   ├── stock_card.py        # 自选股卡片
+│   └── news_timeline.py     # 新闻时间线
+├── pages/                   # Tab 页面
+│   ├── tab_watchlist.py     # 自选股页
+│   ├── tab_analysis.py      # 个股分析页
+│   ├── tab_indicators.py    # 技术指标页
+│   ├── tab_ai.py            # AI分析页
+│   └── tab_news.py          # 热点资讯页
+├── services/                # 服务层
+│   ├── data_service.py      # 数据服务
+│   ├── ai_service.py        # AI服务
+│   ├── sentiment_service.py # 情绪计算
+│   └── news_crawler_service.py # 新闻爬虫
+├── utils/                   # 工具函数
+│   ├── helpers.py           # 辅助函数
+│   ├── indicators.py        # 指标计算
+│   └── theme.py             # 主题管理
 └── flutter_app/             # Flutter 手机 App
     ├── lib/
     │   └── main.dart        # Flutter 主程序
@@ -228,8 +249,9 @@ streamlit>=1.30.0      # Web 框架
 akshare>=1.12.0        # 股票数据
 pandas>=2.0.0          # 数据处理
 matplotlib>=3.7.0      # 图表绑制
-dashscope>=1.20.0      # 阿里百炼 SDK
+openai>=1.0.0          # AI SDK
 python-dotenv>=1.0.0   # 环境变量
+crawl4ai>=0.3.0        # AI爬虫（可选，用于实时新闻）
 ```
 
 ---
@@ -252,12 +274,16 @@ AkShare 获取数据有时较慢，属于正常现象。
 
 确保手机和电脑在同一局域网，使用 `--server.address 0.0.0.0` 启动。
 
+### Q: 新闻数据不是最新的？
+
+安装 crawl4ai 可获取实时新闻：`pip install crawl4ai`
+
 ---
 
 ## 扩展功能（待实现）
 
 - [ ] 多股对比分析
-- [ ] 自选股管理
+- [x] 自选股管理
 - [ ] 价格预警推送
 - [ ] 历史回测功能
 - [ ] 财报深度分析
@@ -276,6 +302,15 @@ AkShare 获取数据有时较慢，属于正常现象。
 ---
 
 ## 更新日志
+
+### v1.1.0 (2026-03-28)
+
+- 新增「热点资讯」Tab页
+- 集成财联社电报、东方财富快讯、同花顺快讯
+- 添加北证50指数到大盘显示
+- 自选股卡片优化：成交额显示、涨跌背景色
+- 市场情绪面板：跌停数统计、恐惧贪婪颜色渐变
+- 支持 crawl4ai AI爬虫获取实时新闻
 
 ### v1.0.0 (2026-03-28)
 
