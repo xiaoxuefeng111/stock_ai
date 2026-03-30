@@ -1,6 +1,16 @@
 # components/stock_card.py
 import streamlit as st
 from typing import Dict, List
+import math
+
+def safe_format(value, fmt=".2f"):
+    """安全格式化数值，NaN 显示 '--'"""
+    if value is None or (isinstance(value, float) and math.isnan(value)):
+        return "--"
+    try:
+        return f"{value:{fmt}}"
+    except:
+        return "--"
 
 def get_market_info(symbol: str) -> str:
     """获取市场板块信息"""
@@ -46,45 +56,45 @@ def render_stock_card(quote: Dict, ma_data: Dict, sentiment_tags: List[str], on_
             <span style="font-size:0.75rem; color:#b2bec3; margin-left:6px; padding:1px 5px; background:#f5f5f5; border-radius:3px;">{industry}</span>
         </div>
         <div style="font-size:0.8rem; color:#636e72; margin-bottom:6px;">
-            <span>压力位 <b style="color:#2d3436;">{high_20:.2f}</b></span>
-            <span style="margin-left:12px;">支撑位 <b style="color:#2d3436;">{low_20:.2f}</b></span>
+            <span>压力位 <b style="color:#2d3436;">{safe_format(high_20)}</b></span>
+            <span style="margin-left:12px;">支撑位 <b style="color:#2d3436;">{safe_format(low_20)}</b></span>
             <span style="margin-left:12px;">成交量 <b style="color:#2d3436;">{format_volume(quote.get('volume', 0))}</b></span>
             <span style="margin-left:12px;">成交额 <b style="color:#2d3436;">{format_amount(ma_data.get('amount', 0))}</b></span>
         </div>
         <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:8px; background:#ffffff80; border-radius:6px; padding:8px; margin-bottom:6px;">
             <div style="text-align:center;">
                 <div style="font-size:0.75rem; color:#636e72;">当前价</div>
-                <div style="font-size:1rem; font-weight:bold;" class="{price_class}">{quote.get('price', 0):.2f}</div>
+                <div style="font-size:1rem; font-weight:bold;" class="{price_class}">{safe_format(quote.get('price', 0))}</div>
             </div>
             <div style="text-align:center;">
                 <div style="font-size:0.75rem; color:#636e72;">当日涨幅</div>
-                <div style="font-size:1rem; font-weight:bold;" class="{price_class}">{arrow}{abs(pct):.2f}%</div>
+                <div style="font-size:1rem; font-weight:bold;" class="{price_class}">{arrow}{safe_format(abs(pct))}%</div>
             </div>
             <div style="text-align:center;">
                 <div style="font-size:0.75rem; color:#636e72;">开盘价</div>
-                <div style="font-size:1rem; font-weight:bold; color:#2d3436;">{quote.get('open', 0):.2f}</div>
+                <div style="font-size:1rem; font-weight:bold; color:#2d3436;">{safe_format(quote.get('open', 0))}</div>
             </div>
             <div style="text-align:center;">
                 <div style="font-size:0.75rem; color:#636e72;">最高价</div>
-                <div style="font-size:1rem; font-weight:bold; color:#ff4757;">{quote.get('high', 0):.2f}</div>
+                <div style="font-size:1rem; font-weight:bold; color:#ff4757;">{safe_format(quote.get('high', 0))}</div>
             </div>
         </div>
         <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:8px; font-size:0.8rem;">
             <div style="text-align:center;">
                 <div style="color:#636e72;">5分钟均线</div>
-                <div style="font-weight:500; color:#2d3436;">{ma_data.get('MA5MIN', quote.get('price', 0)):.2f}</div>
+                <div style="font-weight:500; color:#2d3436;">{safe_format(ma_data.get('MA5MIN', quote.get('price', 0)))}</div>
             </div>
             <div style="text-align:center;">
                 <div style="color:#636e72;">5日均线</div>
-                <div style="font-weight:500; color:#2d3436;">{ma_data.get('MA5', 0):.2f}</div>
+                <div style="font-weight:500; color:#2d3436;">{safe_format(ma_data.get('MA5', 0))}</div>
             </div>
             <div style="text-align:center;">
                 <div style="color:#636e72;">13日均线</div>
-                <div style="font-weight:500; color:#2d3436;">{ma_data.get('MA13', 0):.2f}</div>
+                <div style="font-weight:500; color:#2d3436;">{safe_format(ma_data.get('MA13', 0))}</div>
             </div>
             <div style="text-align:center;">
                 <div style="color:#636e72;">20日均线</div>
-                <div style="font-weight:500; color:#2d3436;">{ma_data.get('MA20', 0):.2f}</div>
+                <div style="font-weight:500; color:#2d3436;">{safe_format(ma_data.get('MA20', 0))}</div>
             </div>
         </div>
     </div>

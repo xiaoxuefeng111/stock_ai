@@ -23,39 +23,32 @@ def render_sentiment_panel(sentiment: Dict, limit_down: int = 0):
     fear_greed = sentiment.get('fear_greed', 50)
     fear_label = sentiment.get('fear_greed_label', '中性')
 
-    st.markdown("#### 🌡️ 市场情绪")
-
-    # 恐惧贪婪指数
-    col1, col2 = st.columns([3, 1])
+    # 紧凑布局：标题和指标一行
+    col1, col2, col3 = st.columns([3, 1, 1])
     with col1:
         bar_color = get_fear_greed_color(fear_greed)
         st.markdown(f"""
-        <div style="margin-bottom:10px;">
-            <span style="font-size:0.9rem;">恐惧贪婪指数</span>
-            <div style="background:#e0e0e0; border-radius:10px; height:20px; margin-top:5px;">
-                <div style="background:{bar_color}; width:{fear_greed}%; height:100%; border-radius:10px;"></div>
-            </div>
-            <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:#666;">
-                <span>恐惧</span>
-                <span style="font-weight:bold;">{fear_greed} ({fear_label})</span>
-                <span>贪婪</span>
-            </div>
+        <div style="margin-bottom:2px;">
+            <span style="font-size:0.85rem; font-weight:500;">🌡️ 恐惧贪婪: </span>
+            <span style="font-weight:bold; color:{bar_color};">{fear_greed}</span>
+            <span style="font-size:0.8rem; color:#666;">({fear_label})</span>
+        </div>
+        <div style="background:#e0e0e0; border-radius:6px; height:8px; margin-top:2px;">
+            <div style="background:{bar_color}; width:{fear_greed}%; height:100%; border-radius:6px;"></div>
         </div>
         """, unsafe_allow_html=True)
-
     with col2:
         heat = sentiment.get('heat_score', 50)
-        st.metric("市场热度", f"{heat}分")
+        st.metric("热度", f"{heat}分", label_visibility="visible")
+    with col3:
+        st.metric("涨停/跌停", f"{sentiment.get('limit_up', 0)}/{limit_down}", label_visibility="visible")
 
-    # 涨跌统计
+    # 涨跌统计 - 一行紧凑显示
     up = sentiment.get('up_count', 0)
     down = sentiment.get('down_count', 0)
-    limit_up = sentiment.get('limit_up', 0)
-
-    cols = st.columns(5)
-    cols[0].metric("上涨", up, delta=None)
-    cols[1].metric("下跌", down, delta=None)
-    cols[2].metric("涨停", limit_up, delta=None)
-    cols[3].metric("跌停", limit_down, delta=None)
-
-    st.markdown("---")
+    st.markdown(f"""
+    <div style="display:flex; gap:20px; font-size:0.85rem; margin-top:5px;">
+        <span>📈 上涨: <b style="color:#ff4757;">{up}</b></span>
+        <span>📉 下跌: <b style="color:#2ed573;">{down}</b></span>
+    </div>
+    """, unsafe_allow_html=True)

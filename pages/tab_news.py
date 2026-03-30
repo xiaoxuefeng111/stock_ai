@@ -80,9 +80,9 @@ def render_tab_news():
         else:
             st.info("暂无数据")
 
-    # 东方财富快讯
-    with st.expander("📊 东方财富快讯", expanded=True):
-        news_list, error = get_eastmoney_news_crawl()
+    # 同花顺快讯
+    with st.expander("📈 同花顺快讯", expanded=True):
+        news_list, error = get_ths_news_crawl()
         if error:
             st.warning(error)
         elif news_list:
@@ -91,9 +91,9 @@ def render_tab_news():
         else:
             st.info("暂无数据")
 
-    # 同花顺快讯
-    with st.expander("📈 同花顺快讯", expanded=False):
-        news_list, error = get_ths_news_crawl()
+    # 东方财富快讯
+    with st.expander("📊 东方财富快讯", expanded=False):
+        news_list, error = get_eastmoney_news_crawl()
         if error:
             st.warning(error)
         elif news_list:

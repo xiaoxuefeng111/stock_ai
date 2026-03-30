@@ -7,13 +7,23 @@ import streamlit as st
 @st.cache_data(ttl=60)
 def calculate_market_sentiment(all_stocks_df: pd.DataFrame, limit_up_df: Optional[pd.DataFrame] = None) -> Dict:
     """计算市场情绪"""
-    if all_stocks_df is None:
-        return {}
+    if all_stocks_df is None or all_stocks_df.empty:
+        return {
+            'up_count': 0,
+            'down_count': 0,
+            'limit_up': 0,
+            'heat_score': 50,
+            'fear_greed': 50,
+            'fear_greed_label': '中性'
+        }
+
+    # 清理数据中的空值
+    valid_df = all_stocks_df[all_stocks_df['涨跌幅'].notna()]
 
     # 涨跌家数
-    up_count = len(all_stocks_df[all_stocks_df['涨跌幅'] > 0])
-    down_count = len(all_stocks_df[all_stocks_df['涨跌幅'] < 0])
-    total = len(all_stocks_df)
+    up_count = len(valid_df[valid_df['涨跌幅'] > 0])
+    down_count = len(valid_df[valid_df['涨跌幅'] < 0])
+    total = len(valid_df)
 
     # 涨停/跌停
     limit_up = len(limit_up_df) if limit_up_df is not None else 0
@@ -22,9 +32,10 @@ def calculate_market_sentiment(all_stocks_df: pd.DataFrame, limit_up_df: Optiona
     heat_score = int((up_count / total) * 100) if total > 0 else 50
 
     # 恐惧贪婪指数 (简化版)
-    avg_change = all_stocks_df['涨跌幅'].mean()
-    fear_greed = 50 + avg_change * 5  # 简化计算
-    fear_greed = max(0, min(100, int(fear_greed)))
+    avg_change = valid_df['涨跌幅'].mean()
+    fear_greed = 50
+    if avg_change is not None and not pd.isna(avg_change):
+        fear_greed = max(0, min(100, int(50 + avg_change * 5)))
 
     return {
         'up_count': up_count,

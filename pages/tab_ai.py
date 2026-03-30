@@ -56,12 +56,18 @@ def render_tab_ai():
 
     # 开始分析按钮
     if st.button("🚀 开始AI分析", type="primary"):
-        with st.spinner("AI分析中，请稍候..."):
-            # 获取数据
+        with st.status("正在进行分析...", expanded=True) as status:
+            # 步骤1：获取实时行情
+            status.update(label="📊 正在获取实时行情数据...")
             quote, _ = get_quote_from_cache(symbol, st.session_state.all_stocks)
+
+            # 步骤2：获取历史数据
+            status.update(label="📈 正在获取历史K线数据...")
             df, _ = get_history(symbol, 60)
 
             if quote and df is not None:
+                # 步骤3：构建分析上下文
+                status.update(label="🔧 正在构建分析上下文...")
                 latest = df.iloc[-1]
 
                 # 构建分析上下文
@@ -85,6 +91,9 @@ def render_tab_ai():
                     }
                 }
 
+                # 步骤4：调用AI分析
+                status.update(label="🤖 正在调用AI进行智能分析（可能需要10-30秒）...")
+
                 # 构建问题
                 question_parts = []
                 if analyze_technical:
@@ -103,6 +112,9 @@ def render_tab_ai():
                 question = f"请分析{'、'.join(question_parts)}，给出投资建议和风险提示"
 
                 result = ai_analyze(json.dumps(ctx, ensure_ascii=False), question, style, depth)
+
+                # 步骤5：完成
+                status.update(label="✅ 分析完成！", state="complete")
 
                 # 显示结果
                 st.markdown("#### 📋 分析结果")
@@ -161,27 +173,28 @@ def render_tab_ai():
                 # 添加用户消息
                 st.session_state.ai_chat_history.append({'role': 'user', 'content': user_question})
 
-                # 获取上下文
-                quote, _ = get_quote_from_cache(symbol, st.session_state.all_stocks)
-                df, _ = get_history(symbol, 60)
+                with st.status("🤖 AI正在思考...", expanded=False):
+                    # 获取上下文
+                    quote, _ = get_quote_from_cache(symbol, st.session_state.all_stocks)
+                    df, _ = get_history(symbol, 60)
 
-                if quote and df is not None:
-                    latest = df.iloc[-1]
-                    ctx = {
-                        "symbol": symbol,
-                        "name": quote['name'],
-                        "quote": quote,
-                        "indicators": {
-                            "MA5": float(latest.get('MA5', 0)),
-                            "RSI": float(latest.get('RSI', 50)),
-                            "MACD": float(latest.get('MACD', 0))
+                    if quote and df is not None:
+                        latest = df.iloc[-1]
+                        ctx = {
+                            "symbol": symbol,
+                            "name": quote['name'],
+                            "quote": quote,
+                            "indicators": {
+                                "MA5": float(latest.get('MA5', 0)),
+                                "RSI": float(latest.get('RSI', 50)),
+                                "MACD": float(latest.get('MACD', 0))
+                            }
                         }
-                    }
 
-                    # 调用AI
-                    result = ai_analyze(json.dumps(ctx, ensure_ascii=False), user_question)
-                    st.session_state.ai_chat_history.append({'role': 'assistant', 'content': result})
-                    st.rerun()
+                        # 调用AI
+                        result = ai_analyze(json.dumps(ctx, ensure_ascii=False), user_question)
+                        st.session_state.ai_chat_history.append({'role': 'assistant', 'content': result})
+                        st.rerun()
 
     with col2:
         if st.button("清空对话"):

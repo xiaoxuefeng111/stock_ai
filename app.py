@@ -39,6 +39,9 @@ st.markdown("""
     .card-row { display:flex; align-items:center; }
     .price-up { color:#ff4757; }
     .price-down { color:#2ed573; }
+    /* 减少顶部间距 */
+    .block-container { padding-top: 1rem !important; }
+    header { display: none !important; }
 </style>
 """, unsafe_allow_html=True)
 
